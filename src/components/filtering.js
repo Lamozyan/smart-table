@@ -1,62 +1,54 @@
 export function initFiltering(elements) {
   const updateIndexes = (elements, indexes) => {
     Object.keys(indexes).forEach((elementName) => {
-      elements[elementName].append(
-        ...Object.values(indexes[elementName]).map((name) => {
+      if (elements[elementName]) {
+        // Очищаем существующие опции, кроме первой
+        while (elements[elementName].options.length > 1) {
+          elements[elementName].remove(1);
+        }
+        
+        Object.values(indexes[elementName]).forEach((name) => {
           const el = document.createElement("option");
           el.textContent = name;
           el.value = name;
-          return el;
-        })
-      );
+          elements[elementName].appendChild(el);
+        });
+      }
     });
   };
 
   const applyFiltering = (query, state, action) => {
-    // код с обработкой очистки поля
-    if (action) {
-      const button = action.target || action;
-      if (button && button.name === "clear") {
-        const fieldName = button.getAttribute("data-field"); // "date" или "customer"
-        // ищем ближайший контейнер фильтра и внутри него input/select
-        let filterWrapper = button.parentElement;
-        // на всякий случай поднимемся до ближайшей колонки, если в filterWrapper не нашли
-        const input =
-          (filterWrapper && filterWrapper.querySelector && filterWrapper.querySelector("input, select")) ||
-          (button.closest && button.closest(".table-column") && button.closest(".table-column").querySelector("input, select"));
-        if (input) {
-          input.value = ""; // сбрасываем значение поля
-        }
-        // синхронизируем state: сбрасываем значение в состоянии
-        if (fieldName && state && typeof state === "object") {
-          if (
-            state.filters && Object.prototype.hasOwnProperty.call(state.filters, fieldName)
-          ) {
-            state.filters[fieldName] = "";
-          } else {
-            state[fieldName] = "";
-          }
-        }
+    // Обработка очистки поля
+    if (action && action.name === "clear") {
+      const fieldName = action.getAttribute("data-field");
+      const input = document.querySelector(`[data-name="searchBy${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}"]`);
+      if (input) {
+        input.value = "";
       }
     }
 
-    // @todo: #4.5 — отфильтровать данные, используя компаратор
+    // Формируем фильтры
     const filter = {};
-    Object.keys(elements).forEach((key) => {
-      if (elements[key]) {
-        if (
-          ["INPUT", "SELECT"].includes(elements[key].tagName) &&
-          elements[key].value
-        ) {
-          // ищем поля ввода в фильтре с непустыми данными
-          filter[`filter[${elements[key].name}]`] = elements[key].value; // чтобы сформировать в query вложенный объект фильтра
-        }
-      }
-    });
+    
+    if (elements.searchByDate && elements.searchByDate.value) {
+      filter['filter[date]'] = elements.searchByDate.value;
+    }
+    if (elements.searchByCustomer && elements.searchByCustomer.value) {
+      filter['filter[customer]'] = elements.searchByCustomer.value;
+    }
+    if (elements.searchBySeller && elements.searchBySeller.value) {
+      filter['filter[seller]'] = elements.searchBySeller.value;
+    }
+    if (elements.totalFrom && elements.totalFrom.value) {
+      filter['filter[total][from]'] = elements.totalFrom.value;
+    }
+    if (elements.totalTo && elements.totalTo.value) {
+      filter['filter[total][to]'] = elements.totalTo.value;
+    }
 
     return Object.keys(filter).length
       ? Object.assign({}, query, filter)
-      : query; // если в фильтре что-то добавилось, применим к запросу
+      : query;
   };
 
   return {

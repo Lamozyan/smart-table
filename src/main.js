@@ -18,17 +18,26 @@ function collectState() {
 }
 
 async function render(action) {
+  console.log("Render called with action:", action);
   let state = collectState();
-  let query = {};
+  console.log("State:", state);
   
+  let query = {};
   query = applySearching(query, state, action);
   query = applyFiltering(query, state, action);
   query = applySorting(query, state, action);
   query = applyPagination(query, state, action);
   
-  const { total, items } = await api.getRecords(query);
-  updatePagination(total, query);
-  sampleTable.render(items);
+  console.log("Query before getRecords:", query);
+  
+  try {
+    const { total, items } = await api.getRecords(query);
+    console.log("Received data:", { total, itemsCount: items.length });
+    updatePagination(total, query);
+    sampleTable.render(items);
+  } catch (error) {
+    console.error("Error loading data:", error);
+  }
 }
 
 // Инициализация таблицы
