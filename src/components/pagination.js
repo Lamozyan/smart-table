@@ -12,6 +12,7 @@ export const initPagination = (
     const limit = state.rowsPerPage;
     let page = state.page;
     
+    // Переносим код для обработки действий пагинации
     if (action && pageCount) {
       switch (action.name) {
         case "prev":
@@ -29,6 +30,7 @@ export const initPagination = (
       }
     }
     
+    // Возвращаем параметры пагинации для запроса к серверу
     return Object.assign({}, query, {
       limit: limit || 10,
       page: page || 1,
@@ -45,9 +47,13 @@ export const initPagination = (
       return;
     }
     
+    // Вычисляем количество страниц на основе общего количества записей и лимита
     pageCount = Math.ceil(total / limit);
+    
+    // Получаем видимые страницы для отображения
     const visiblePages = getPages(page, pageCount, 5);
     
+    // Перерисовываем пагинатор с новыми данными
     pages.replaceChildren(
       ...visiblePages.map((pageNumber) => {
         const el = pageTemplate.cloneNode(true);
@@ -55,6 +61,7 @@ export const initPagination = (
       })
     );
     
+    // Обновляем информацию о отображаемых строках
     fromRow.textContent = (page - 1) * limit + 1;
     toRow.textContent = Math.min(page * limit, total);
     totalRows.textContent = total;

@@ -2,11 +2,12 @@ export function initFiltering(elements) {
   const updateIndexes = (elements, indexes) => {
     Object.keys(indexes).forEach((elementName) => {
       if (elements[elementName]) {
-        // Очищаем существующие опции, кроме первой
+        // Очищаем существующие опции, кроме первой (пустой)
         while (elements[elementName].options.length > 1) {
           elements[elementName].remove(1);
         }
         
+        // Добавляем новые опции из полученных индексов
         Object.values(indexes[elementName]).forEach((name) => {
           const el = document.createElement("option");
           el.textContent = name;
@@ -27,27 +28,20 @@ export function initFiltering(elements) {
       }
     }
 
-    // Формируем фильтры
+    // Формируем фильтры на основе заполненных полей
     const filter = {};
     
-    if (elements.searchByDate && elements.searchByDate.value) {
-      filter['filter[date]'] = elements.searchByDate.value;
-    }
-    if (elements.searchByCustomer && elements.searchByCustomer.value) {
-      filter['filter[customer]'] = elements.searchByCustomer.value;
-    }
-    if (elements.searchBySeller && elements.searchBySeller.value) {
-      filter['filter[seller]'] = elements.searchBySeller.value;
-    }
-    if (elements.totalFrom && elements.totalFrom.value) {
-      filter['filter[total][from]'] = elements.totalFrom.value;
-    }
-    if (elements.totalTo && elements.totalTo.value) {
-      filter['filter[total][to]'] = elements.totalTo.value;
-    }
+    Object.keys(elements).forEach(key => {
+      const element = elements[key];
+      if (element && ['INPUT', 'SELECT'].includes(element.tagName) && element.value) {
+        // Для полей ввода и селектов с непустыми значениями формируем параметр фильтра
+        filter[`filter[${element.name}]`] = element.value;
+      }
+    });
 
-    return Object.keys(filter).length
-      ? Object.assign({}, query, filter)
+    // Возвращаем query с добавленными фильтрами, если они есть
+    return Object.keys(filter).length 
+      ? Object.assign({}, query, filter) 
       : query;
   };
 

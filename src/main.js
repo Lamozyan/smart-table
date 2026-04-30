@@ -8,7 +8,8 @@ import { initSorting } from "./components/sorting.js";
 import { initFiltering } from "./components/filtering.js";
 import { initPagination } from "./components/pagination.js";
 
-const api = initData();
+// 1. Вызов initData(sourceData) присваиваем константе API
+const api = initData([]);
 
 function collectState() {
   const state = processFormData(new FormData(sampleTable.container));
@@ -17,24 +18,24 @@ function collectState() {
   return { ...state, rowsPerPage, page };
 }
 
+// 2. Функция render для загрузки и отображения данных
 async function render(action) {
-  console.log("Render called with action:", action);
-  let state = collectState();
-  console.log("State:", state);
+  let state = collectState(); // состояние полей из таблицы
+  let query = {}; // здесь будут формироваться параметры запроса
   
-  let query = {};
+  // Применяем все фильтры и сортировки в правильном порядке
   query = applySearching(query, state, action);
-  query = applyFiltering(query, state, action);
+  query = applyFiltering(query, state, action); // применяем фильтрацию
   query = applySorting(query, state, action);
-  query = applyPagination(query, state, action);
-  
+  query = applyPagination(query, state, action); // применяем пагинацию
+
   console.log("Query before getRecords:", query);
   
   try {
-    const { total, items } = await api.getRecords(query);
-    console.log("Received data:", { total, itemsCount: items.length });
-    updatePagination(total, query);
-    sampleTable.render(items);
+    const { total, items } = await api.getRecords(query); // запрашиваем данные с собранными параметрами
+    
+    updatePagination(total, query); // перерисовываем пагинатор на основе полученного total
+    sampleTable.render(items); // отображаем полученные данные
   } catch (error) {
     console.error("Error loading data:", error);
   }
@@ -51,7 +52,7 @@ const sampleTable = initTable(
   render
 );
 
-// Инициализация компонентов
+// Инициализация пагинации - получаем обе функции
 const { applyPagination, updatePagination } = initPagination(
   sampleTable.pagination.elements,
   (el, page, isCurrent) => {
@@ -64,28 +65,35 @@ const { applyPagination, updatePagination } = initPagination(
   }
 );
 
+// Инициализация сортировки
 const applySorting = initSorting([
   sampleTable.header.elements.sortByDate,
   sampleTable.header.elements.sortByTotal,
 ]);
 
+// Инициализация фильтрации - получаем обе функции
 const { applyFiltering, updateIndexes } = initFiltering(
   sampleTable.filter.elements
 );
 
+// Инициализация поиска
 const applySearching = initSearching(sampleTable.search.elements);
 
 // Добавление в DOM
 const appRoot = document.querySelector("#app");
 appRoot.appendChild(sampleTable.container);
 
-// Запуск
+// 3. Асинхронная функция init для загрузки начальных данных
 async function init() {
-  const indexes = await api.getIndexes();
+  const indexes = await api.getIndexes(); // получаем индексы (продавцы и покупатели)
+  
+  // Обновляем фильтры полученными данными о продавцах
   updateIndexes(sampleTable.filter.elements, {
-    searchBySeller: indexes.sellers,
+    searchBySeller: indexes.sellers
   });
-  await render();
+  
+  await render(); // выполняем первый рендер
 }
 
+// Запускаем приложение
 init();
